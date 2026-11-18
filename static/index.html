@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人任务清单</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>📝 个人任务清单</h1>
+      <p class="subtitle" id="stat"></p>
+    </header>
+
+    <form class="add-form" id="addForm">
+      <input type="text" id="titleInput" placeholder="添加新任务…" autocomplete="off" maxlength="120">
+      <select id="priorityInput">
+        <option value="高">高优先级</option>
+        <option value="中" selected>中优先级</option>
+        <option value="低">低优先级</option>
+      </select>
+      <input type="date" id="dueInput" title="截止日期">
+      <input type="text" id="categoryInput" placeholder="分类(可选)" autocomplete="off" maxlength="30">
+      <button type="submit" class="btn-add">添加</button>
+    </form>
+
+    <div class="filters">
+      <button class="filter active" data-filter="all">全部</button>
+      <button class="filter" data-filter="active">进行中</button>
+      <button class="filter" data-filter="done">已完成</button>
+      <button class="filter" data-filter="overdue">已逾期</button>
+      <select id="categoryFilter">
+        <option value="">全部分类</option>
+      </select>
+    </div>
+
+    <ul class="task-list" id="taskList"></ul>
+
+    <p class="empty" id="empty" style="display:none">暂无任务，添加一个吧 ✨</p>
+  </div>
+
+  <div class="modal-overlay" id="modal" style="display:none">
+    <div class="modal">
+      <h2>编辑任务</h2>
+      <form id="editForm">
+        <label>标题</label>
+        <input type="text" id="editTitle" maxlength="120">
+        <label>备注</label>
+        <textarea id="editNote" rows="3"></textarea>
+        <div class="row">
+          <div>
+            <label>优先级</label>
+            <select id="editPriority">
+              <option value="高">高</option>
+              <option value="中">中</option>
+              <option value="低">低</option>
+            </select>
+          </div>
+          <div>
+            <label>截止日期</label>
+            <input type="date" id="editDue">
+          </div>
+          <div>
+            <label>分类</label>
+            <input type="text" id="editCategory" maxlength="30">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="cancelBtn">取消</button>
+          <button type="submit" class="btn-save">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
