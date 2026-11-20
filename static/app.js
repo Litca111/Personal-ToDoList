@@ -43,6 +43,19 @@
     return !t.done && t.due && t.due < todayStr();
   }
 
+  // 已完成任务距自动删除的剩余时间（12 小时）
+  const AUTO_DELETE_MS = 12 * 60 * 60 * 1000;
+  function autoDeleteHint(t) {
+    if (!t.done || !t.completed_at) return "";
+    const ca = new Date(t.completed_at);
+    if (isNaN(ca.getTime())) return "";
+    const remain = ca.getTime() + AUTO_DELETE_MS - Date.now();
+    if (remain <= 0) return "即将删除";
+    const h = Math.floor(remain / 3600000);
+    const m = Math.floor((remain % 3600000) / 60000);
+    return h > 0 ? `${h} 小时后自动删除` : `${m} 分钟后自动删除`;
+  }
+
   function escapeHtml(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
@@ -92,6 +105,9 @@
     if (t.category) meta += `<span class="badge cat">${escapeHtml(t.category)}</span>`;
     if (t.due)
       meta += `<span class="badge ${overdue ? "overdue" : ""}">${escapeHtml(dueStr)}</span>`;
+    const autoHint = autoDeleteHint(t);
+    if (autoHint)
+      meta += `<span class="badge autodel" title="勾选完成后 12 小时自动删除">⏱ ${escapeHtml(autoHint)}</span>`;
 
     const note = t.note ? `<div class="task-note">${escapeHtml(t.note)}</div>` : "";
 

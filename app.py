@@ -9,7 +9,9 @@
 import json
 import os
 import threading
+import time
 import uuid
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -17,7 +19,32 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 DATA_FILE = os.path.join(BASE_DIR, "tasks.json")
 
+# 已完成任务在多少小时后自动删除
+AUTO_DELETE_HOURS = 12
+
 _lock = threading.Lock()
+
+
+def _now_iso():
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _is_expired(task):
+    """已完成且超过 AUTO_DELETE_HOURS 小时的任务视为过期。"""
+    if not task.get("done"):
+        return False
+    ca = task.get("completed_at")
+    if not ca:
+        return False
+    try:
+        dt = datetime.fromisoformat(ca)
+    except ValueError:
+        return False
+    return datetime.now() - dt > timedelta(hours=AUTO_DELETE_HOURS)
+
+
+def cleanup_expired(tasks):
+    return [t for t in tasks if not _is_expired(t)]
 
 
 # ------------------------- 数据存取 -------------------------
@@ -85,7 +112,11 @@ class Handler(BaseHTTPRequestHandler):
             self._serve_static_by_ext(path[len("/static/"):])
         elif path == "/api/tasks":
             with _lock:
-                self._send_json(200, load_tasks())
+                tasks = load_tasks()
+                cleaned = cleanup_expired(tasks)
+                if len(cleaned) != len(tasks):
+                    save_tasks(cleaned)
+                self._send_json(200, cleaned)
         else:
             self.send_error(404)
 
@@ -126,10 +157,19 @@ class Handler(BaseHTTPRequestHandler):
                 updated = None
                 for t in tasks:
                     if t["id"] == task_id:
-                        for key in ("title", "done", "priority", "category",
+                        for key in ("title", "priority", "category",
                                     "due", "note", "created"):
                             if key in data:
                                 t[key] = data[key]
+                        # 处理完成状态：勾选完成时记录时间，取消完成时清除
+                        if "done" in data:
+                            done = bool(data["done"])
+                            t["done"] = done
+                            if done:
+                                if not t.get("completed_at"):
+                                    t["completed_at"] = _now_iso()
+                            else:
+                                t.pop("completed_at", None)
                         updated = t
                         break
                 if updated is None:
@@ -172,12 +212,32 @@ class Handler(BaseHTTPRequestHandler):
         print("[%s] %s" % (self.log_date_time_string(), format % args))
 
 
+def _cleanup_loop():
+    """后台线程：每分钟检查一次，自动删除已过期任务。"""
+    while True:
+        time.sleep(60)
+        try:
+            with _lock:
+                tasks = load_tasks()
+                cleaned = cleanup_expired(tasks)
+                if len(cleaned) != len(tasks):
+                    save_tasks(cleaned)
+        except Exception as e:  # noqa: BLE001
+            print("自动清理失败:", e)
+
+
 def main():
     port = int(os.environ.get("PORT", 8000))
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+    # 启动后台自动清理线程
+    cleaner = threading.Thread(target=_cleanup_loop, daemon=True)
+    cleaner.start()
+
     print("=" * 46)
     print("  个人任务清单已启动")
     print("  访问地址: http://127.0.0.1:%d" % port)
+    print("  已完成任务将在 %d 小时后自动删除" % AUTO_DELETE_HOURS)
     print("  按 Ctrl+C 停止服务")
     print("=" * 46)
     try:

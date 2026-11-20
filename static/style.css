@@ -144,6 +144,7 @@ body {
 .badge.low { background: #d1fae5; color: #047857; }
 .badge.cat { background: #e0e7ff; color: #4338ca; }
 .badge.overdue { background: #fee2e2; color: #b91c1c; }
+.badge.autodel { background: #f3e8ff; color: #7e22ce; }
 
 .task-note { font-size: 13px; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
 

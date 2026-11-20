@@ -11,9 +11,19 @@
 - ✅ 分类（标签）与按分类筛选
 - ✅ 备注
 - ✅ 筛选视图：全部 / 进行中 / 已完成 / 已逾期
+- ✅ 勾选完成的任务在 **12 小时后自动删除**（显示删除倒计时）
 - ✅ 数据本地持久化（`tasks.json`）
 
 ## 运行
+
+### 方式一：VSCode 一键启动（推荐）
+
+1. 用 VSCode 打开本文件夹
+2. 确保已安装 **Python 扩展**（ms-python.python），并在右下角选择 Python 解释器
+3. 打开 `app.py`，按 **`F5`**（或「运行 → 启动调试」）
+4. 终端显示 `访问地址: http://127.0.0.1:8000` 后，浏览器打开该地址
+
+### 方式二：命令行
 
 ```bash
 python app.py
@@ -27,8 +37,10 @@ python app.py
 
 ```
 ToDoList/
-├── app.py            # 后端服务器（http.server + JSON 持久化）
+├── app.py            # 后端服务器（http.server + JSON 持久化 + 自动清理）
 ├── tasks.json        # 任务数据（首次运行自动生成）
+├── .vscode/
+│   └── launch.json   # F5 一键启动配置
 └── static/
     ├── index.html    # 页面结构
     ├── style.css     # 样式
