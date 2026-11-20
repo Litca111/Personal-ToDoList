@@ -195,6 +195,36 @@ body {
 }
 .btn-cancel:hover { background: #f3f4f6; }
 
+/* 每周任务 */
+.weekly-check {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; color: var(--muted);
+  padding: 10px 4px; cursor: pointer; user-select: none;
+}
+.weekly-check input { cursor: pointer; }
+
+.section-title {
+  font-size: 16px; font-weight: 600;
+  margin: 20px 0 12px;
+  color: var(--text);
+}
+.week-info {
+  font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px;
+}
+.weekly-section {
+  background: #f5f3ff;
+  border: 1px dashed #c4b5fd;
+  border-radius: 14px;
+  padding: 16px 16px 8px;
+  margin: 8px 0 16px;
+}
+.weekly-section .section-title { margin-top: 0; }
+.weekly-section .task { background: #fff; }
+
+.badge.weekly { background: #ede9fe; color: #6d28d9; }
+.badge.cycles { background: #dbeafe; color: #1d4ed8; }
+.badge.weekdone { background: #d1fae5; color: #047857; }
+
 @media (max-width: 520px) {
   .add-form { flex-direction: column; }
   .add-form input, .add-form select { width: 100%; }

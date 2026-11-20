@@ -7,7 +7,8 @@
     "category": "PE",
     "due": "2026-11-22",
     "note": "",
-    "created": "2026/11/19 12:49:12"
+    "created": "2026/11/19 12:49:12",
+    "completed_at": "2026-11-20T13:26:27"
   },
   {
     "id": "0a432115afb64bcfb3aaea4718d09bf5",
@@ -17,7 +18,8 @@
     "category": "",
     "due": "2026-11-24",
     "note": "",
-    "created": "2026/11/19 12:49:37"
+    "created": "2026/11/19 12:49:37",
+    "completed_at": "2026-11-20T13:26:21"
   },
   {
     "id": "06313c4976ce459a8daa253cae9bf98b",
@@ -50,22 +52,12 @@
     "created": "2026/11/19 12:51:12"
   },
   {
-    "id": "64fc42f965a3482e8ead04516e5dd6d6",
-    "title": "线代",
-    "done": false,
-    "priority": "中",
-    "category": "",
-    "due": "2026-12-01",
-    "note": "",
-    "created": "2026/11/19 12:51:40"
-  },
-  {
     "id": "5b583a5be53448589dfd9ce70821dc95",
     "title": "Lisn&Spik",
     "done": false,
     "priority": "低",
     "category": "",
-    "due": "2026-12-01",
+    "due": "2026-12-12",
     "note": "",
     "created": "2026/11/19 12:52:25"
   },
@@ -80,23 +72,42 @@
     "created": "2026/11/19 12:52:34"
   },
   {
-    "id": "5b399fe6b07545c2820ddfd0e1c44c7b",
-    "title": "Code Mission",
+    "id": "ba3349de27ae44dcbddea62121569a17",
+    "title": "LA mission",
     "done": true,
     "priority": "中",
-    "category": "Code",
-    "due": "2026-11-26",
+    "category": "",
+    "due": "",
     "note": "",
-    "created": "2026/11/19 13:25:18"
+    "created": "2026/11/20 19:57:43",
+    "is_weekly": true,
+    "cycles": 1,
+    "weekly_done_week": "2026-W47"
   },
   {
-    "id": "92f6b5939226472bb6f8ba4dcc2951d5",
+    "id": "d428068c27194fa7b5be736558a28181",
+    "title": "Code mission",
+    "done": true,
+    "priority": "中",
+    "category": "",
+    "due": "",
+    "note": "",
+    "created": "2026/11/20 19:58:07",
+    "is_weekly": true,
+    "cycles": 1,
+    "weekly_done_week": "2026-W47"
+  },
+  {
+    "id": "433ee8f8928c4e7fbe44db9e5b322b82",
     "title": "Code Review",
     "done": false,
     "priority": "中",
-    "category": "Code",
-    "due": "2026-12-01",
+    "category": "",
+    "due": "",
     "note": "",
-    "created": "2026/11/20 00:31:29"
+    "created": "2026/11/20 19:58:22",
+    "is_weekly": true,
+    "cycles": 0,
+    "weekly_done_week": null
   }
 ]

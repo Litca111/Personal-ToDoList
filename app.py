@@ -29,8 +29,18 @@ def _now_iso():
     return datetime.now().isoformat(timespec="seconds")
 
 
+def current_week_key(now=None):
+    """返回当前 ISO 周年份与周数，如 '2026-W47'（周一为一周起点）。"""
+    d = (now or datetime.now()).date()
+    iso = d.isocalendar()
+    return "%d-W%02d" % (iso[0], iso[1])
+
+
 def _is_expired(task):
-    """已完成且超过 AUTO_DELETE_HOURS 小时的任务视为过期。"""
+    """已完成且超过 AUTO_DELETE_HOURS 小时的任务视为过期。
+    每周任务属于长期重复任务，不参与自动删除。"""
+    if task.get("is_weekly"):
+        return False
     if not task.get("done"):
         return False
     ca = task.get("completed_at")
@@ -45,6 +55,34 @@ def _is_expired(task):
 
 def cleanup_expired(tasks):
     return [t for t in tasks if not _is_expired(t)]
+
+
+def refresh_weekly(tasks, now=None):
+    """按当前周同步每周任务的完成状态：
+    本周已完成 → done=True；已进入新一周 → done=False（自动刷新）。"""
+    week = current_week_key(now)
+    for t in tasks:
+        if t.get("is_weekly"):
+            t["done"] = t.get("weekly_done_week") == week
+    return tasks
+
+
+def set_weekly_done(task, done, now=None):
+    """处理每周任务的勾选/取消勾选，维护累计完成周期数 cycles。"""
+    week = current_week_key(now)
+    cycles = int(task.get("cycles", 0) or 0)
+    if done:
+        task["done"] = True
+        if task.get("weekly_done_week") != week:
+            # 本周首次完成 → 累计 +1
+            task["weekly_done_week"] = week
+            task["cycles"] = cycles + 1
+    else:
+        task["done"] = False
+        if task.get("weekly_done_week") == week:
+            # 取消本周完成 → 回退累计
+            task["cycles"] = max(0, cycles - 1)
+        task["weekly_done_week"] = None
 
 
 # ------------------------- 数据存取 -------------------------
@@ -114,6 +152,7 @@ class Handler(BaseHTTPRequestHandler):
             with _lock:
                 tasks = load_tasks()
                 cleaned = cleanup_expired(tasks)
+                refresh_weekly(cleaned)
                 if len(cleaned) != len(tasks):
                     save_tasks(cleaned)
                 self._send_json(200, cleaned)
@@ -137,6 +176,8 @@ class Handler(BaseHTTPRequestHandler):
                 "due": (data.get("due") or "").strip(),
                 "note": (data.get("note") or "").strip(),
                 "created": data.get("created") or "",
+                "is_weekly": bool(data.get("is_weekly", False)),
+                "cycles": 0,
             }
             with _lock:
                 tasks = load_tasks()
@@ -164,12 +205,15 @@ class Handler(BaseHTTPRequestHandler):
                         # 处理完成状态：勾选完成时记录时间，取消完成时清除
                         if "done" in data:
                             done = bool(data["done"])
-                            t["done"] = done
-                            if done:
-                                if not t.get("completed_at"):
-                                    t["completed_at"] = _now_iso()
+                            if t.get("is_weekly"):
+                                set_weekly_done(t, done)
                             else:
-                                t.pop("completed_at", None)
+                                t["done"] = done
+                                if done:
+                                    if not t.get("completed_at"):
+                                        t["completed_at"] = _now_iso()
+                                else:
+                                    t.pop("completed_at", None)
                         updated = t
                         break
                 if updated is None:

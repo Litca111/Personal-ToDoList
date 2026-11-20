@@ -12,6 +12,9 @@
   const stat = $("#stat");
   const addForm = $("#addForm");
   const categoryFilter = $("#categoryFilter");
+  const weeklyList = $("#weeklyList");
+  const weeklyEmpty = $("#weeklyEmpty");
+  const weekInfo = $("#weekInfo");
 
   // ---------- API ----------
   async function api(url, options) {
@@ -65,21 +68,41 @@
   }
 
   // ---------- 渲染 ----------
+  function weekRange() {
+    const now = new Date();
+    const day = now.getDay(); // 0=周日
+    const diff = day === 0 ? -6 : 1 - day; // 到本周一的偏移
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${fmt(monday)} - ${fmt(sunday)}`;
+  }
+
   function render() {
-    const categories = [...new Set(tasks.map((t) => t.category).filter(Boolean))];
+    const weekly = tasks.filter((t) => t.is_weekly);
+    const normal = tasks.filter((t) => !t.is_weekly);
+
+    const categories = [...new Set(normal.map((t) => t.category).filter(Boolean))];
     const current = categoryFilter.value;
     categoryFilter.innerHTML =
       '<option value="">全部分类</option>' +
       categories.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     categoryFilter.value = categories.includes(current) ? current : "";
 
-    let list = tasks.slice();
+    // 每周任务栏目（不参与下方筛选，独立展示）
+    weekInfo.textContent = `本周 ${weekRange()} · 每周一自动刷新`;
+    weeklyList.innerHTML = weekly.map(weeklyCard).join("");
+    weeklyEmpty.style.display = weekly.length ? "none" : "block";
+
+    // 普通任务
+    let list = normal.slice();
     if (currentFilter === "active") list = list.filter((t) => !t.done);
     else if (currentFilter === "done") list = list.filter((t) => t.done);
     else if (currentFilter === "overdue") list = list.filter(isOverdue);
     if (categoryFilter.value) list = list.filter((t) => t.category === categoryFilter.value);
 
-    // 排序：未完成在前，按优先级、截止日期
     const pOrder = { 高: 0, 中: 1, 低: 2 };
     list.sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
@@ -92,19 +115,50 @@
     empty.style.display = list.length ? "none" : "block";
 
     const done = tasks.filter((t) => t.done).length;
-    const overdue = tasks.filter(isOverdue).length;
-    stat.textContent = `共 ${tasks.length} 项 · 已完成 ${done} 项 · 已逾期 ${overdue} 项`;
+    const overdue = normal.filter(isOverdue).length;
+    const weeklyDone = weekly.filter((t) => t.done).length;
+    stat.textContent = `共 ${tasks.length} 项 · 已完成 ${done} 项 · 已逾期 ${overdue} 项 · 本周每周任务 ${weeklyDone}/${weekly.length}`;
   }
 
-  function taskCard(t) {
-    const overdue = isOverdue(t);
+  function metaBadges(t, overdue) {
     const priClass = t.priority === "高" ? "high" : t.priority === "低" ? "low" : "mid";
     const dueStr = t.due ? (overdue ? "已逾期 · " : "截止 ") + t.due : "";
-
     let meta = `<span class="badge ${priClass}">${escapeHtml(t.priority)}</span>`;
     if (t.category) meta += `<span class="badge cat">${escapeHtml(t.category)}</span>`;
     if (t.due)
       meta += `<span class="badge ${overdue ? "overdue" : ""}">${escapeHtml(dueStr)}</span>`;
+    return meta;
+  }
+
+  function weeklyCard(t) {
+    const overdue = isOverdue(t);
+    let meta = metaBadges(t, overdue);
+    meta += `<span class="badge weekly" title="每周重复任务，每周一自动刷新">🔁 每周</span>`;
+    meta += `<span class="badge cycles" title="累计完成的周期数">✅ 已完成 ${t.cycles || 0} 周</span>`;
+    if (t.done)
+      meta += `<span class="badge weekdone" title="本周已完成">本周已完成</span>`;
+
+    const note = t.note ? `<div class="task-note">${escapeHtml(t.note)}</div>` : "";
+    const pri = t.priority === "高" ? "high" : t.priority === "低" ? "low" : "high";
+
+    return `
+      <li class="task ${t.done ? "done" : ""} p-${pri}" data-id="${t.id}" data-weekly="1">
+        <div class="checkbox" data-action="toggle" title="标记本周完成/未完成"></div>
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(t.title)}</div>
+          <div class="task-meta">${meta}</div>
+          ${note}
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn" data-action="edit" title="编辑">✏️</button>
+          <button class="icon-btn del" data-action="del" title="删除">🗑️</button>
+        </div>
+      </li>`;
+  }
+
+  function taskCard(t) {
+    const overdue = isOverdue(t);
+    let meta = metaBadges(t, overdue);
     const autoHint = autoDeleteHint(t);
     if (autoHint)
       meta += `<span class="badge autodel" title="勾选完成后 12 小时自动删除">⏱ ${escapeHtml(autoHint)}</span>`;
@@ -132,20 +186,23 @@
     e.preventDefault();
     const title = $("#titleInput").value.trim();
     if (!title) return;
+    const isWeekly = $("#weeklyInput").checked;
     const body = {
       title,
       priority: $("#priorityInput").value,
       due: $("#dueInput").value,
       category: $("#categoryInput").value.trim(),
       created: new Date().toLocaleString("zh-CN"),
+      is_weekly: isWeekly,
     };
     await createTask(body);
     $("#titleInput").value = "";
     $("#categoryInput").value = "";
+    $("#weeklyInput").checked = false;
     await refresh();
   });
 
-  taskList.addEventListener("click", async (e) => {
+  async function handleListClick(e) {
     const el = e.target.closest("[data-action]");
     if (!el) return;
     const li = el.closest(".task");
@@ -164,7 +221,10 @@
     } else if (action === "edit") {
       openModal(t);
     }
-  });
+  }
+
+  taskList.addEventListener("click", handleListClick);
+  weeklyList.addEventListener("click", handleListClick);
 
   // 筛选按钮
   document.querySelectorAll(".filter").forEach((btn) => {
