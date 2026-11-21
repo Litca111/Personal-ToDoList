@@ -36,10 +36,19 @@ def current_week_key(now=None):
     return "%d-W%02d" % (iso[0], iso[1])
 
 
+def current_daily_key(now=None):
+    """返回当前所属的'日'键，以凌晨 4 点为分界：
+    03:59 之前属于前一天，04:00 起属于当天。"""
+    dt = now or datetime.now()
+    if dt.hour < 4:
+        dt = dt - timedelta(days=1)
+    return dt.strftime("%Y-%m-%d")
+
+
 def _is_expired(task):
     """已完成且超过 AUTO_DELETE_HOURS 小时的任务视为过期。
-    每周任务属于长期重复任务，不参与自动删除。"""
-    if task.get("is_weekly"):
+    每日/每周任务属于长期重复任务，不参与自动删除。"""
+    if task.get("is_weekly") or task.get("is_daily"):
         return False
     if not task.get("done"):
         return False
@@ -83,6 +92,34 @@ def set_weekly_done(task, done, now=None):
             # 取消本周完成 → 回退累计
             task["cycles"] = max(0, cycles - 1)
         task["weekly_done_week"] = None
+
+
+def refresh_daily(tasks, now=None):
+    """按当前'日'同步每日任务的完成状态：
+    当日已完成 → done=True；跨过凌晨 4 点 → done=False（自动刷新）。"""
+    day = current_daily_key(now)
+    for t in tasks:
+        if t.get("is_daily"):
+            t["done"] = t.get("daily_done_date") == day
+    return tasks
+
+
+def set_daily_done(task, done, now=None):
+    """处理每日任务的勾选/取消勾选，维护累计完成周期数 cycles。"""
+    day = current_daily_key(now)
+    cycles = int(task.get("cycles", 0) or 0)
+    if done:
+        task["done"] = True
+        if task.get("daily_done_date") != day:
+            # 当日首次完成 → 累计 +1
+            task["daily_done_date"] = day
+            task["cycles"] = cycles + 1
+    else:
+        task["done"] = False
+        if task.get("daily_done_date") == day:
+            # 取消当日完成 → 回退累计
+            task["cycles"] = max(0, cycles - 1)
+        task["daily_done_date"] = None
 
 
 # ------------------------- 数据存取 -------------------------
@@ -152,6 +189,7 @@ class Handler(BaseHTTPRequestHandler):
             with _lock:
                 tasks = load_tasks()
                 cleaned = cleanup_expired(tasks)
+                refresh_daily(cleaned)
                 refresh_weekly(cleaned)
                 if len(cleaned) != len(tasks):
                     save_tasks(cleaned)
@@ -177,6 +215,7 @@ class Handler(BaseHTTPRequestHandler):
                 "note": (data.get("note") or "").strip(),
                 "created": data.get("created") or "",
                 "is_weekly": bool(data.get("is_weekly", False)),
+                "is_daily": bool(data.get("is_daily", False)),
                 "cycles": 0,
             }
             with _lock:
@@ -207,6 +246,8 @@ class Handler(BaseHTTPRequestHandler):
                             done = bool(data["done"])
                             if t.get("is_weekly"):
                                 set_weekly_done(t, done)
+                            elif t.get("is_daily"):
+                                set_daily_done(t, done)
                             else:
                                 t["done"] = done
                                 if done:

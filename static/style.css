@@ -208,9 +208,19 @@ body {
   margin: 20px 0 12px;
   color: var(--text);
 }
-.week-info {
+.week-info, .day-info {
   font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px;
 }
+.daily-section {
+  background: #fff7ed;
+  border: 1px dashed #fdba74;
+  border-radius: 14px;
+  padding: 16px 16px 8px;
+  margin: 8px 0 16px;
+}
+.daily-section .section-title { margin-top: 0; }
+.daily-section .task { background: #fff; }
+
 .weekly-section {
   background: #f5f3ff;
   border: 1px dashed #c4b5fd;
@@ -221,8 +231,10 @@ body {
 .weekly-section .section-title { margin-top: 0; }
 .weekly-section .task { background: #fff; }
 
+.badge.daily { background: #ffedd5; color: #c2410c; }
 .badge.weekly { background: #ede9fe; color: #6d28d9; }
 .badge.cycles { background: #dbeafe; color: #1d4ed8; }
+.badge.daydone { background: #d1fae5; color: #047857; }
 .badge.weekdone { background: #d1fae5; color: #047857; }
 
 @media (max-width: 520px) {

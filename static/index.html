@@ -22,17 +22,24 @@
       </select>
       <input type="date" id="dueInput" title="截止日期">
       <input type="text" id="categoryInput" placeholder="分类(可选)" autocomplete="off" maxlength="30">
-      <label class="weekly-check" title="每周任务每周一自动刷新，无需重复添加">
-        <input type="checkbox" id="weeklyInput">
-        每周任务
-      </label>
+      <select id="typeInput" title="任务类型">
+        <option value="normal" selected>普通任务</option>
+        <option value="daily">每日任务</option>
+        <option value="weekly">每周任务</option>
+      </select>
       <button type="submit" class="btn-add">添加</button>
     </form>
+
+    <section class="daily-section" id="dailySection">
+      <h2 class="section-title">☀️ 每日任务 <span class="day-info" id="dayInfo"></span></h2>
+      <ul class="task-list daily-list" id="dailyList"></ul>
+      <p class="empty" id="dailyEmpty" style="display:none">暂无每日任务，选择「每日任务」添加一个 🌅</p>
+    </section>
 
     <section class="weekly-section" id="weeklySection">
       <h2 class="section-title">📅 每周任务 <span class="week-info" id="weekInfo"></span></h2>
       <ul class="task-list weekly-list" id="weeklyList"></ul>
-      <p class="empty" id="weeklyEmpty" style="display:none">暂无每周任务，勾选「每周任务」添加一个 🔁</p>
+      <p class="empty" id="weeklyEmpty" style="display:none">暂无每周任务，选择「每周任务」添加一个 🔁</p>
     </section>
 
     <div class="filters">

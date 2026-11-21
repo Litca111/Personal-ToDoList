@@ -1,27 +1,5 @@
 [
   {
-    "id": "571df86cfa9143daacb5b6e4687730ce",
-    "title": "Running",
-    "done": true,
-    "priority": "高",
-    "category": "PE",
-    "due": "2026-11-22",
-    "note": "",
-    "created": "2026/11/19 12:49:12",
-    "completed_at": "2026-11-20T13:26:27"
-  },
-  {
-    "id": "0a432115afb64bcfb3aaea4718d09bf5",
-    "title": "Email",
-    "done": true,
-    "priority": "高",
-    "category": "",
-    "due": "2026-11-24",
-    "note": "",
-    "created": "2026/11/19 12:49:37",
-    "completed_at": "2026-11-20T13:26:21"
-  },
-  {
     "id": "06313c4976ce459a8daa253cae9bf98b",
     "title": "Writing Eng",
     "done": false,
@@ -30,16 +8,6 @@
     "due": "2026-12-01",
     "note": "",
     "created": "2026/11/19 12:50:26"
-  },
-  {
-    "id": "0829119d35094354bc3b131597def676",
-    "title": "Lv.4",
-    "done": false,
-    "priority": "中",
-    "category": "",
-    "due": "2026-12-12",
-    "note": "",
-    "created": "2026/11/19 12:50:51"
   },
   {
     "id": "5ae821c8952d45e5bccab61cf9b91d1c",
@@ -109,5 +77,18 @@
     "is_weekly": true,
     "cycles": 0,
     "weekly_done_week": null
+  },
+  {
+    "id": "161a23ee8f7e44f2aac2bffc858da909",
+    "title": "Lv.4 Training",
+    "done": false,
+    "priority": "低",
+    "category": "Eng",
+    "due": "2026-12-12",
+    "note": "",
+    "created": "2026/11/21 18:08:43",
+    "is_weekly": false,
+    "is_daily": true,
+    "cycles": 0
   }
 ]

@@ -15,6 +15,9 @@
   const weeklyList = $("#weeklyList");
   const weeklyEmpty = $("#weeklyEmpty");
   const weekInfo = $("#weekInfo");
+  const dailyList = $("#dailyList");
+  const dailyEmpty = $("#dailyEmpty");
+  const dayInfo = $("#dayInfo");
 
   // ---------- API ----------
   async function api(url, options) {
@@ -81,8 +84,9 @@
   }
 
   function render() {
+    const daily = tasks.filter((t) => t.is_daily);
     const weekly = tasks.filter((t) => t.is_weekly);
-    const normal = tasks.filter((t) => !t.is_weekly);
+    const normal = tasks.filter((t) => !t.is_weekly && !t.is_daily);
 
     const categories = [...new Set(normal.map((t) => t.category).filter(Boolean))];
     const current = categoryFilter.value;
@@ -90,6 +94,11 @@
       '<option value="">全部分类</option>' +
       categories.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     categoryFilter.value = categories.includes(current) ? current : "";
+
+    // 每日任务栏目（不参与下方筛选，独立展示）
+    dayInfo.textContent = `今日 · 每天凌晨 4 点自动刷新`;
+    dailyList.innerHTML = daily.map(dailyCard).join("");
+    dailyEmpty.style.display = daily.length ? "none" : "block";
 
     // 每周任务栏目（不参与下方筛选，独立展示）
     weekInfo.textContent = `本周 ${weekRange()} · 每周一自动刷新`;
@@ -116,8 +125,9 @@
 
     const done = tasks.filter((t) => t.done).length;
     const overdue = normal.filter(isOverdue).length;
+    const dailyDone = daily.filter((t) => t.done).length;
     const weeklyDone = weekly.filter((t) => t.done).length;
-    stat.textContent = `共 ${tasks.length} 项 · 已完成 ${done} 项 · 已逾期 ${overdue} 项 · 本周每周任务 ${weeklyDone}/${weekly.length}`;
+    stat.textContent = `共 ${tasks.length} 项 · 已完成 ${done} 项 · 已逾期 ${overdue} 项 · 每日 ${dailyDone}/${daily.length} · 每周 ${weeklyDone}/${weekly.length}`;
   }
 
   function metaBadges(t, overdue) {
@@ -128,6 +138,32 @@
     if (t.due)
       meta += `<span class="badge ${overdue ? "overdue" : ""}">${escapeHtml(dueStr)}</span>`;
     return meta;
+  }
+
+  function dailyCard(t) {
+    const overdue = isOverdue(t);
+    let meta = metaBadges(t, overdue);
+    meta += `<span class="badge daily" title="每日重复任务，每天凌晨 4 点自动刷新">🌅 每日</span>`;
+    meta += `<span class="badge cycles" title="累计完成的周期数">✅ 已完成 ${t.cycles || 0} 天</span>`;
+    if (t.done)
+      meta += `<span class="badge daydone" title="今日已完成">今日已完成</span>`;
+
+    const note = t.note ? `<div class="task-note">${escapeHtml(t.note)}</div>` : "";
+    const pri = t.priority === "高" ? "high" : t.priority === "低" ? "low" : "high";
+
+    return `
+      <li class="task ${t.done ? "done" : ""} p-${pri}" data-id="${t.id}" data-daily="1">
+        <div class="checkbox" data-action="toggle" title="标记今日完成/未完成"></div>
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(t.title)}</div>
+          <div class="task-meta">${meta}</div>
+          ${note}
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn" data-action="edit" title="编辑">✏️</button>
+          <button class="icon-btn del" data-action="del" title="删除">🗑️</button>
+        </div>
+      </li>`;
   }
 
   function weeklyCard(t) {
@@ -186,19 +222,20 @@
     e.preventDefault();
     const title = $("#titleInput").value.trim();
     if (!title) return;
-    const isWeekly = $("#weeklyInput").checked;
+    const type = $("#typeInput").value;
     const body = {
       title,
       priority: $("#priorityInput").value,
       due: $("#dueInput").value,
       category: $("#categoryInput").value.trim(),
       created: new Date().toLocaleString("zh-CN"),
-      is_weekly: isWeekly,
+      is_weekly: type === "weekly",
+      is_daily: type === "daily",
     };
     await createTask(body);
     $("#titleInput").value = "";
     $("#categoryInput").value = "";
-    $("#weeklyInput").checked = false;
+    $("#typeInput").value = "normal";
     await refresh();
   });
 
@@ -224,6 +261,7 @@
   }
 
   taskList.addEventListener("click", handleListClick);
+  dailyList.addEventListener("click", handleListClick);
   weeklyList.addEventListener("click", handleListClick);
 
   // 筛选按钮
